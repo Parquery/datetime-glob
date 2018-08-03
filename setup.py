@@ -17,7 +17,7 @@ with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='datetime-glob',
-    version='1.0.6',
+    version='1.0.7',
     description='Parses date/time from paths using glob wildcard pattern intertwined with date/time format',
     long_description=long_description,
     url='https://bitbucket.org/parqueryopen/datetime-glob',
