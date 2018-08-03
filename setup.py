@@ -34,4 +34,5 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     install_requires=['lexery>=1.0.0'],
     extras_require={'dev': ['mypy==0.560', 'pylint==1.8.2', 'yapf==0.20.2']},
-    py_modules=['datetime_glob'])
+    py_modules=['datetime_glob'],
+    package_data={"datetime_glob": ["py.typed"]})
