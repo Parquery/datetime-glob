@@ -61,15 +61,12 @@ def main() -> int:
     isort_files = map(str, source_files)
     # yapf: enable
 
-    if overwrite:
-        cmd = ["isort", "--project", "datetime_glob"]
-        cmd.extend(str(pth) for pth in source_files)
-
-        subprocess.check_call(cmd)
-    else:
-        cmd = ["isort", "--check-only", "--project", "datetime_glob"]
-        cmd.extend(str(pth) for pth in source_files)
-        subprocess.check_call(cmd)
+    # yapf: disable
+    subprocess.check_call(
+        ["isort", "--project", "datetime_glob", '--line-width', '120'] +
+        ([] if overwrite else ['--check-only']) +
+        [str(pth) for pth in source_files])
+    # yapf: enable
 
     print("Pydocstyle'ing...")
     subprocess.check_call(["pydocstyle", "datetime_glob"], cwd=str(repo_root))

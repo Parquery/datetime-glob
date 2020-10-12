@@ -8,8 +8,7 @@ import datetime
 import os
 import pathlib
 import re
-from typing import (Iterable, List, MutableMapping, Optional, Pattern, Tuple,
-                    Union)
+from typing import Iterable, List, MutableMapping, Optional, Pattern, Tuple, Union
 
 import lexery
 

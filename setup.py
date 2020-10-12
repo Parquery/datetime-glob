@@ -18,17 +18,22 @@ with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='datetime-glob',
     version='1.0.7',
-    description='Parses date/time from paths using glob wildcard pattern intertwined with date/time format',
+    description='Parse date/time from paths using glob wildcard pattern intertwined with date/time format',
     long_description=long_description,
     url='https://github.com/Parquery/datetime-glob',
     author='Marko Ristin',
     author_email='marko.ristin@gmail.com',
+    # yapf: disable
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
+    # yapf: enable
     keywords='date time datetime parse glob pattern strptime wildcards',
     python_requires='>=3.5',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
