@@ -6,16 +6,20 @@ import datetime
 import pathlib
 import tempfile
 import unittest
+from typing import List, Optional, Tuple
 
 import datetime_glob
 
 
-def match_equal(match: datetime_glob.Match, other: datetime_glob.Match) -> bool:
+def match_equal(match: Optional[datetime_glob.Match], other: Optional[datetime_glob.Match]) -> bool:
     if match is None and other is None:
         return True
 
     if (match is None and other is not None) or (match is not None and other is None):
         return False
+
+    assert match is not None, "Expected match to be not None if we got thus far."
+    assert other is not None, "Expected other to be not None if we got thus far."
 
     return match.year == other.year and \
            match.month == other.month and \
@@ -27,11 +31,11 @@ def match_equal(match: datetime_glob.Match, other: datetime_glob.Match) -> bool:
 
 
 class TestDatetimeGlob(unittest.TestCase):
-    def test_parse_pattern_segment_invalid(self):
+    def test_parse_pattern_segment_invalid(self) -> None:
         with self.assertRaises(ValueError):
             _ = datetime_glob.parse_pattern_segment(pattern_segment='some text %1')
 
-    def test_parse_pattern_segment_as_text(self):
+    def test_parse_pattern_segment_as_text(self) -> None:
         # yapf: disable
         table = [
             ('some -text_[x]', 'some -text_[x]'),
@@ -66,7 +70,7 @@ class TestDatetimeGlob(unittest.TestCase):
                 self.assertIsNone(patseg.text)
                 self.assertIsNotNone(patseg.regex)
 
-    def test_parse_pattern_segment(self):
+    def test_parse_pattern_segment(self) -> None:
         # yapf: disable
         table = [
             ('some -text_[x]', None, {}),
@@ -108,10 +112,12 @@ class TestDatetimeGlob(unittest.TestCase):
                 self.assertIsNotNone(patseg.text)
             else:
                 self.assertIsNotNone(patseg.regex, pattern_segment)
-                self.assertEqual(patseg.regex.pattern, expected_regex, pattern_segment)
-                self.assertDictEqual(patseg.group_map, expected_group_map, pattern_segment)
+                assert patseg.regex is not None  # needed for mypy
 
-    def test_parse_pattern_as_prefix_segments(self):
+                self.assertEqual(patseg.regex.pattern, expected_regex, pattern_segment)
+                self.assertDictEqual(patseg.group_map, expected_group_map, pattern_segment)  # type: ignore
+
+    def test_parse_pattern_as_prefix_segments(self) -> None:
         # yapf: disable
         table = [
             ('/*', '/', 1),
@@ -128,7 +134,7 @@ class TestDatetimeGlob(unittest.TestCase):
             self.assertEqual(prefix, expected_prefix, pattern)
             self.assertEqual(len(patsegs), expected_count, pattern)
 
-    def test_match_segment(self):
+    def test_match_segment(self) -> None:
         # yapf: disable
         table = [
             ('some text *%%*x%Y-%m-%dT%H-%M-%S.%fZ.jpg', 'some text aa%bbx2016-12-02T03-04-05.123456Z.jpg',
@@ -149,22 +155,32 @@ class TestDatetimeGlob(unittest.TestCase):
                 match_equal(match=mtch, other=expected), "for input: {!r}, got: {}, expected: {}".format(
                     segment, mtch, expected))
 
-    def test_match_segment_for_arbitrary_patterns(self):
+    def test_match_segment_for_arbitrary_patterns(self) -> None:
         patseg = datetime_glob.parse_pattern_segment(pattern_segment='%-d/%-m/%Y,%H:%M:%S*')
-        match = datetime_glob.match_segment(segment='9/4/2013,00:00:00,7.8,7.4,9.53', pattern_segment=patseg)
-        self.assertEqual(match.as_datetime(), datetime.datetime(2013, 4, 9))
+        mtch = datetime_glob.match_segment(segment='9/4/2013,00:00:00,7.8,7.4,9.53', pattern_segment=patseg)
 
-    def test_match_multiple_definition(self):
+        self.assertIsNotNone(mtch)
+        assert mtch is not None  # needed for mypy
+        self.assertEqual(mtch.as_datetime(), datetime.datetime(2013, 4, 9))
+
+    def test_match_multiple_definition(self) -> None:
         mtcher = datetime_glob.Matcher(pattern='/some/path/%Y-%m-%d/%Y-%m-%dT%H-%M-%S.%fZ.jpg')
         mtch = mtcher.match(path='/some/path/2016-12-02/2016-12-02T03-04-05.123456Z.jpg')
+
+        self.assertIsNotNone(mtch)
+        assert mtch is not None  # needed for mypy
         self.assertEqual(mtch.as_datetime(), datetime.datetime(2016, 12, 2, 3, 4, 5, 123456))
 
         mtch = mtcher.match(path='/some/path/2017-04-12/2016-12-02T03-04-05.123456Z.jpg')
         self.assertIsNone(mtch)
 
-    def test_match_conversion(self):
+    def test_match_conversion(self) -> None:
         mtcher = datetime_glob.Matcher(pattern='/some/path/%Y-%m-%dT%H-%M-%S.%fZ.jpg')
         mtch = mtcher.match(path='/some/path/2016-12-02T03-04-05.123456Z.jpg')
+
+        self.assertIsNotNone(mtch)
+        assert mtch is not None  # needed for mypy
+
         self.assertEqual(mtch.as_datetime(), datetime.datetime(2016, 12, 2, 3, 4, 5, 123456))
         self.assertEqual(mtch.as_maybe_datetime(), datetime.datetime(2016, 12, 2, 3, 4, 5, 123456))
         self.assertEqual(mtch.as_date(), datetime.date(2016, 12, 2))
@@ -175,6 +191,9 @@ class TestDatetimeGlob(unittest.TestCase):
         mtcher = datetime_glob.Matcher(pattern='/some/path/%H-%M-%S.jpg')
         mtch = mtcher.match(path='/some/path/03-04-05.jpg')
 
+        self.assertIsNotNone(mtch)
+        assert mtch is not None  # needed for mypy
+
         with self.assertRaises(ValueError):
             _ = mtch.as_datetime()
             _ = mtch.as_date()
@@ -184,7 +203,7 @@ class TestDatetimeGlob(unittest.TestCase):
 
         self.assertEqual(mtch.as_time(), datetime.time(3, 4, 5, 0))
 
-    def test_matcher_preconditions(self):
+    def test_matcher_preconditions(self) -> None:
         # yapf: disable
         table = [
             ('/', ValueError),
@@ -202,7 +221,7 @@ class TestDatetimeGlob(unittest.TestCase):
             else:
                 _ = datetime_glob.Matcher(pattern=pattern)
 
-    def test_matcher_match_preconditions(self):
+    def test_matcher_match_preconditions(self) -> None:
         mtcher = datetime_glob.Matcher('/some/./path/*%Y-%m-%dT%H-%M-%SZ.jpg')
 
         # yapf: disable
@@ -232,7 +251,7 @@ class TestDatetimeGlob(unittest.TestCase):
         with self.assertRaises(ValueError):
             relative_mtcher.match('/some/absolute/path')
 
-    def test_matcher(self):
+    def test_matcher(self) -> None:
         relative_pattern = 'some/./path/*%Y-%m-%dT%H-%M-%SZ.jpg'
 
         # yapf: disable
@@ -252,12 +271,18 @@ class TestDatetimeGlob(unittest.TestCase):
             abs_matcher = datetime_glob.Matcher(pattern='/{}'.format(relative_pattern))
             abs_pth = '/{}'.format(relative_path)
 
-            self.assertTrue(match_equal(match=abs_matcher.match(path=abs_pth), other=expected_match))
+            abs_mtch = abs_matcher.match(path=abs_pth)
+
+            self.assertTrue(
+                match_equal(match=abs_mtch, other=expected_match),
+                ("The absolute matcher failed to match. "
+                 "The absolute path was: {}, the expected match: {}, got match: {}").format(
+                     abs_pth, expected_match, abs_mtch))
 
             rel_matcher = datetime_glob.Matcher(pattern=relative_pattern)
             self.assertTrue(match_equal(match=rel_matcher.match(path=relative_path), other=expected_match))
 
-    def test_sort_listdir(self):
+    def test_sort_listdir(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             pth = pathlib.Path(tempdir)
             (pth / 'some-description-20.3.2016.txt').write_text('tested')
@@ -266,7 +291,16 @@ class TestDatetimeGlob(unittest.TestCase):
 
             matcher = datetime_glob.Matcher(pattern='*%-d.%-m.%Y.txt')
             subpths_matches = [(subpth, matcher.match(subpth.name)) for subpth in pth.iterdir()]
-            dtimes_subpths = [(mtch.as_datetime(), subpth) for subpth, mtch in subpths_matches]
+
+            dtimes_subpths = []  # type: List[Tuple[datetime.datetime, pathlib.Path]]
+            for subpth, mtch in subpths_matches:
+                self.assertIsNotNone(subpth)
+                assert subpth is not None  # needed for mypy
+
+                self.assertIsNotNone(mtch)
+                assert mtch is not None  # needed for mypy
+
+                dtimes_subpths.append((mtch.as_datetime(), subpth))
 
             subpths = [subpth for _, subpth in sorted(dtimes_subpths)]
 
@@ -280,7 +314,7 @@ class TestDatetimeGlob(unittest.TestCase):
 
             self.assertListEqual(subpths, expected)
 
-    def test_walk(self):
+    def test_walk(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             tmppth = pathlib.Path(tempdir)
 
@@ -305,7 +339,7 @@ class TestDatetimeGlob(unittest.TestCase):
 
             mtches_pths = list(datetime_glob.walk(pattern=tempdir + "/%Y-%m-%d/%H-%M-%S.txt"))
 
-            dtimes_pths = sorted([(mtch.as_datetime(), str(pth.relative_to(tmppth))) for mtch, pth in mtches_pths])
+            dtimes_pths = sorted((mtch.as_datetime(), pth.relative_to(tmppth).as_posix()) for mtch, pth in mtches_pths)
             self.assertListEqual(dtimes_pths, [(datetime.datetime(2016, 10, 3, 21, 22, 23), '2016-10-03/21-22-23.txt'),
                                                (datetime.datetime(2016, 10, 4, 11, 12, 13), '2016-10-04/11-12-13.txt'),
                                                (datetime.datetime(2016, 10, 5, 1, 2, 3), '2016-10-05/01-02-03.txt')])
