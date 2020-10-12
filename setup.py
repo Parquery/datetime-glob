@@ -20,9 +20,9 @@ setup(
     version='1.0.7',
     description='Parses date/time from paths using glob wildcard pattern intertwined with date/time format',
     long_description=long_description,
-    url='https://bitbucket.org/parqueryopen/datetime-glob',
+    url='https://github.com/Parquery/datetime-glob',
     author='Marko Ristin',
-    author_email='marko@parquery.com',
+    author_email='marko.ristin@gmail.com',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
