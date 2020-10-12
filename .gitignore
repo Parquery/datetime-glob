@@ -5,3 +5,5 @@ venv3
 .precommit_hashes
 *.egg-info
 dist/
+venv/
+.coverage

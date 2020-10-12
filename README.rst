@@ -38,8 +38,9 @@ To match a path:
 
     >>> import datetime_glob
     >>> matcher = datetime_glob.Matcher(pattern='/some/path/*%Y-%m-%dT%H-%M-%SZ.jpg')
-    >>> matcher.match(path='/some/path/some-text2016-07-03T21-22-23Z.jpg')
-    datetime_glob.Match(year = 2016, month = 7, day = 3, hour = 21, minute = 22, second = 23, microsecond = None)
+    >>> match = matcher.match(path='/some/path/some-text2016-07-03T21-22-23Z.jpg')
+    >>> match
+    datetime_glob.Match(year = 2016, month = 7, day = 3, hour = 21, minute = 22, second = 23)
 
     >>> match.as_datetime()
     datetime.datetime(2016, 7, 3, 21, 22, 23)
@@ -58,7 +59,7 @@ value in order to match:
 
     >>> match = matcher.match(path='/some/path/16/2016-07-03.txt')
     >>> match
-    datetime_glob.Match(year = 2016, month = 7, day = 3, hour = None, minute = None, second = None, microsecond = None)
+    datetime_glob.Match(year = 2016, month = 7, day = 3)
 
     >>> match = matcher.match(path='/some/path/19/2016-07-03.txt')
     >>> type(match)
@@ -68,10 +69,10 @@ You can walk the pattern on the file system:
 
 .. code-block:: python
 
-    >>> import datetime_glob
-    >>> for match, path in datetime_glob.walk(pattern='/some/path/*%Y/%m/%d/%H-%M-%SZ.jpg'):
-    ...     dtime = match.as_datetime()
-    ...     print(dtime, path)
+    import datetime_glob
+    for match, path in datetime_glob.walk(pattern='/some/path/*%Y/%m/%d/%H-%M-%SZ.jpg'):
+        dtime = match.as_datetime()
+        print(dtime, path)
     2016-03-04 12:13:14 /some/path/saved-2016/03/04/12-13-14Z.jpg
     2017-11-23 22:23:24 /some/path/restored-2017/11/23/22-23-24Z.jpg
 
@@ -85,31 +86,27 @@ To iterate manually over a tree, and match incrementally each path segment by yo
 
     >>> match=datetime_glob.match_segment(segment='some', pattern_segment=pattern_segments[0], match=match)
     >>> match
-    datetime_glob.Match(year = None, month = None, day = None, hour = None, minute = None, second = None,
-                        microsecond = None)
+    datetime_glob.Match()
 
     >>> match=datetime_glob.match_segment(segment='path', pattern_segment=pattern_segments[1], match=match)
     >>> match
-    datetime_glob.Match(year = None, month = None, day = None, hour = None, minute = None, second = None,
-                        microsecond = None)
+    datetime_glob.Match()
 
     >>> match=datetime_glob.match_segment(segment='some-text2016', pattern_segment=pattern_segments[2], match=match)
     >>> match
-    datetime_glob.Match(year = 2016, month = None, day = None, hour = None, minute = None, second = None,
-                        microsecond = None)
+    datetime_glob.Match(year = 2016)
 
     >>> match=datetime_glob.match_segment(segment='07', pattern_segment=pattern_segments[3], match=match)
     >>> match
-    datetime_glob.Match(year = 2016, month = 7, day = None, hour = None, minute = None, second = None,
-                        microsecond = None)
+    datetime_glob.Match(year = 2016, month = 7)
 
     >>> match=datetime_glob.match_segment(segment='03', pattern_segment=pattern_segments[4], match=match)
     >>> match
-    datetime_glob.Match(year = 2016, month = 7, day = 3, hour = None, minute = None, second = None, microsecond = None)
+    datetime_glob.Match(year = 2016, month = 7, day = 3)
 
     >>> match=datetime_glob.match_segment(segment='21-22-23Z.jpg', pattern_segment=pattern_segments[5], match=match)
     >>> match
-    datetime_glob.Match(year = 2016, month = 7, day = 3, hour = 21, minute = 22, second = 23, microsecond = None)
+    datetime_glob.Match(year = 2016, month = 7, day = 3, hour = 21, minute = 22, second = 23)
 
 
 Supported strftime directives

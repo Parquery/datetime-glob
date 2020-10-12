@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-""" parses date/time from paths using glob wildcard pattern intertwined with a subset of strftime directives. """
+"""Parse date/time from paths using glob wildcard pattern intertwined with a subset of strftime directives."""
+
 import calendar
 import collections
 import copy
 import datetime
 import os
-# yapf: disable
 import pathlib
 import re
-from typing import Optional, List, Pattern, MutableMapping, Union, Tuple, Iterable  # pylint: disable=unused-import
+from typing import (Iterable, List, MutableMapping, Optional, Pattern, Tuple,
+                    Union)
 
 import lexery
 
+# yapf: disable
 LEXER = lexery.Lexer(
     rules=[
         lexery.Rule(identifier='*', pattern=re.compile(r'\*')),
@@ -33,16 +35,15 @@ LEXER = lexery.Lexer(
         lexery.Rule(identifier='text', pattern=re.compile(r'[^%*?]'))
     ]
 )
-
-
 # yapf: enable
 
 
 class PatternSegment:
-    """ defines a regular expression for a given path segment. """
+    """Define a regular expression for a given path segment."""
 
     def __init__(self) -> None:
-        self.regex = None  # type: Optional[Pattern]
+        """Initialize with empty values."""
+        self.regex = None  # type: Optional[Pattern[str]]
 
         # set only if the segment does not contain a wildcard
         self.text = None  # type: Optional[str]
@@ -50,12 +51,19 @@ class PatternSegment:
         # group index -> token class, sorted by group index
         self.group_map = collections.OrderedDict()  # type: MutableMapping[int, str]
 
+    def __repr__(self) -> str:
+        """Represent the pattern segment succenctly, but not ``eval``-able."""
+        return 'PatternSegment(regex={}, text={}, group_map={})'.format(self.regex, self.text, self.group_map)
+
 
 def __tokens_as_fixed_text(tokens: List[lexery.Token]) -> Optional[PatternSegment]:
     """
+    Convert tokens, if possible, to a fixed text in case no token contains a wildcard.
+
     :param tokens: of the pattern segment
-    :return: pattern segment as a fixed text to be matched if the tokens contain no wildcards and
-    no strftime directives; None otherwise
+    :return:
+        pattern segment as a fixed text to be matched if the tokens contain no wildcards and
+        no strftime directives; None otherwise
     """
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-return-statements
@@ -103,8 +111,10 @@ def __tokens_as_fixed_text(tokens: List[lexery.Token]) -> Optional[PatternSegmen
     return patseg
 
 
-def __tokens_as_regex(tokens: List[lexery.Token]) -> PatternSegment:
+def __tokens_as_pattern_segment(tokens: List[lexery.Token]) -> PatternSegment:
     """
+    Parse tokens to a pattern segment.
+
     :param tokens: of the pattern segment
     :return: patern segment parsed from the tokens
     """
@@ -185,7 +195,7 @@ def __tokens_as_regex(tokens: List[lexery.Token]) -> PatternSegment:
 
 def parse_pattern_segment(pattern_segment: str) -> PatternSegment:
     """
-    Parses the given pattern segment to a regular expression.
+    Parse the given pattern segment to a regular expression.
 
     :param pattern_segment: pattern path segment
     :return: regular expression with a group map corresponding to the glob pattern segment.
@@ -202,20 +212,23 @@ def parse_pattern_segment(pattern_segment: str) -> PatternSegment:
     if lexerr is not None:
         raise ValueError("Invalid pattern segment: {}".format(lexerr))
 
+    assert token_lines is not None, \
+        "lexery returned no error, but resulting token_lines are None."
+
     tokens = []  # type: List[lexery.Token]
     for line in token_lines:
         tokens.extend(line)
 
     patseg = __tokens_as_fixed_text(tokens=tokens)
     if patseg is None:
-        patseg = __tokens_as_regex(tokens=tokens)
+        patseg = __tokens_as_pattern_segment(tokens=tokens)
 
     return patseg
 
 
 def parse_pattern(pattern: str) -> List[PatternSegment]:
     """
-    Splits the given pattern into pattern segments that match the corresponding path segments.
+    Split the given pattern into pattern segments that match the corresponding path segments.
 
     :param pattern: glob pattern intertwined with strftime directives.
     :return: list of regular expressions where each expression corresponds to a pattern path segment .
@@ -229,9 +242,9 @@ def parse_pattern(pattern: str) -> List[PatternSegment]:
     if pattern.endswith('/'):
         raise ValueError("Unexpected trailing slash ('/'): {}".format(pattern))
 
-    segments = pattern.split(os.sep)  # type: List[str]
+    segments = pattern.split('/')  # type: List[str]
 
-    segments = [segment for segment in segments if segment != '' and segment != '.']
+    segments = [segment for segment in segments if segment not in ('', '.')]
 
     for segment in segments:
         if segment == '..':
@@ -250,14 +263,15 @@ def parse_pattern(pattern: str) -> List[PatternSegment]:
 
 def parse_pattern_as_prefix_segments(pattern: str) -> Tuple[str, List[PatternSegment]]:
     """
-    Parses the given pattern into a fixed prefix followed by path segments containing wild-cards and
-    strftime directives.
+    Parse the given pattern into a fixed prefix followed by path segments.
+
+    The path segements are not fixed text, but contain by definition wild-cards and strftime directives.
 
     This function is particularly useful when you need to iterate manually through a directory tree, and want to
     change directory directly to the fixed prefix.
 
     :param pattern: to be parsed
-    :return: (fixed prefix, list of pattern segments)
+    :return: (fixed prefix, remaining pattern segments to be parsed)
     """
     # pylint: disable=invalid-name
     is_absolute = pattern.startswith('/')
@@ -267,13 +281,16 @@ def parse_pattern_as_prefix_segments(pattern: str) -> Tuple[str, List[PatternSeg
     patsegs = parse_pattern(pattern=pattern)
 
     last_text = -1
+
+    prefix_parts = []  # type: List[str]
+
     for i, patseg in enumerate(patsegs):
         if patseg.text is None:
             break
 
+        prefix_parts.append(patseg.text)
         last_text = i
 
-    prefix_parts = [patseg.text for patseg in patsegs[:last_text + 1]]
     if is_absolute:
         prefix = '/' + '/'.join(prefix_parts)
     else:
@@ -283,7 +300,7 @@ def parse_pattern_as_prefix_segments(pattern: str) -> Tuple[str, List[PatternSeg
 
 
 class Match:
-    """ represents date/time matches in the path. """
+    """Represent date/time matches in the path."""
 
     def __init__(self,
                  year: Optional[int] = None,
@@ -293,6 +310,7 @@ class Match:
                  minute: Optional[int] = None,
                  second: Optional[int] = None,
                  microsecond: Optional[int] = None) -> None:
+        """Initialize with the given values."""
         # pylint: disable=too-many-arguments
         self.year = year
         self.month = month
@@ -304,6 +322,8 @@ class Match:
 
     def as_datetime(self) -> datetime.datetime:
         """
+        Create a datetime based on the match.
+
         :return: match as a date/time
         :raises: ValueError if one of the expected fields is missing
         """
@@ -327,6 +347,8 @@ class Match:
 
     def as_maybe_datetime(self) -> Optional[datetime.datetime]:
         """
+        Try to create a datetime based on the match.
+
         :return: match as a date/time; None if the match can not be converted to a date/time
         """
         if self.year is None or self.month is None or self.day is None:
@@ -336,6 +358,8 @@ class Match:
 
     def as_date(self) -> datetime.date:
         """
+        Create the date based on the match.
+
         :return: match as a date; time part is ignored
         :raises: ValueError if one of the expected fields is missing
         """
@@ -352,6 +376,8 @@ class Match:
 
     def as_maybe_date(self) -> Optional[datetime.date]:
         """
+        Try to create the date based on the match.
+
         :return: match as a date; None if the match can not be converted to a date
         """
         if self.year is None or self.month is None or self.day is None:
@@ -361,6 +387,8 @@ class Match:
 
     def as_time(self) -> datetime.time:
         """
+        Create the time based on the match.
+
         :return: match as a time; date part is ignored and missing fields are assumed to be 0.
         """
         return datetime.time(
@@ -370,9 +398,30 @@ class Match:
             microsecond=0 if self.microsecond is None else self.microsecond)
 
     def __repr__(self) -> str:
-        return "datetime_glob.Match(year = {}, month = {}, day = {}, hour = {}, " \
-               "minute = {}, second = {}, microsecond = {})".format(
-            self.year, self.month, self.day, self.hour, self.minute, self.second, self.microsecond)
+        """Give a succinct, though not ``eval``-uable, representation."""
+        parts = []
+        if self.year is not None:
+            parts.append('year = {}'.format(self.year))
+
+        if self.month is not None:
+            parts.append('month = {}'.format(self.month))
+
+        if self.day is not None:
+            parts.append('day = {}'.format(self.day))
+
+        if self.hour is not None:
+            parts.append('hour = {}'.format(self.hour))
+
+        if self.minute is not None:
+            parts.append('minute = {}'.format(self.minute))
+
+        if self.second is not None:
+            parts.append('second = {}'.format(self.second))
+
+        if self.microsecond is not None:
+            parts.append('microsecond = {}'.format(self.microsecond))
+
+        return "datetime_glob.Match({})".format(", ".join(parts))
 
 
 EMPTY_MATCH = Match()
@@ -380,8 +429,10 @@ EMPTY_MATCH = Match()
 
 def match_segment(segment: str, pattern_segment: PatternSegment, match: Match = EMPTY_MATCH) -> Optional[Match]:
     """
-    Performs a step of incremental matching. If the `pattern_segment` matches the `segment`, parses the date/time
-    information from the segment and returns the updated copy of the `match`.
+    Perform a step of incremental matching.
+
+    If the `pattern_segment` matches the `segment`, parses the date/time information from the segment and
+    returns the updated copy of the `match`.
 
     :param segment: to match
     :param pattern_segment: how to match
@@ -410,7 +461,7 @@ def match_segment(segment: str, pattern_segment: PatternSegment, match: Match = 
     match1 = copy.copy(match)
 
     for group_i, directive in pattern_segment.group_map.items():
-        if directive == '%d' or directive == '%-d':
+        if directive in ('%d', '%-d'):
             day = int(regex_mtch.group(group_i))
 
             if match1.day is not None:
@@ -421,7 +472,7 @@ def match_segment(segment: str, pattern_segment: PatternSegment, match: Match = 
             else:
                 match1.day = day
 
-        elif directive == '%m' or directive == '%-m':
+        elif directive in ('%m', '%-m'):
             month = int(regex_mtch.group(group_i))
 
             if match1.month is not None:
@@ -454,7 +505,7 @@ def match_segment(segment: str, pattern_segment: PatternSegment, match: Match = 
             else:
                 match1.year = year
 
-        elif directive == '%H' or directive == '%-H':
+        elif directive in ('%H', '%-H'):
             hour = int(regex_mtch.group(group_i))
 
             if match1.hour is not None:
@@ -465,7 +516,7 @@ def match_segment(segment: str, pattern_segment: PatternSegment, match: Match = 
             else:
                 match1.hour = hour
 
-        elif directive == '%M' or directive == '%-M':
+        elif directive in ('%M', '%-M'):
             minute = int(regex_mtch.group(group_i))
 
             if match1.minute is not None:
@@ -476,7 +527,7 @@ def match_segment(segment: str, pattern_segment: PatternSegment, match: Match = 
             else:
                 match1.minute = minute
 
-        elif directive == '%S' or directive == '%-S':
+        elif directive in ('%S', '%-S'):
             second = int(regex_mtch.group(group_i))
 
             if match1.second is not None:
@@ -505,6 +556,9 @@ def match_segment(segment: str, pattern_segment: PatternSegment, match: Match = 
     if match1.year is not None and match1.month is not None and \
             match1.year != match.year and match1.month != match.month:
         _, days_in_month = calendar.monthrange(match1.year, match1.month)
+
+        assert match1.day is not None, \
+            'year and month of match1 are not None, but match1.day is unexpectedly None.'
         if match1.day > days_in_month:
             return None
 
@@ -512,15 +566,18 @@ def match_segment(segment: str, pattern_segment: PatternSegment, match: Match = 
 
 
 class Matcher:
-    """ matches the given path against a compiled pattern. """
+    """Match the given path against a compiled pattern."""
 
     def __init__(self, pattern: str) -> None:
+        """Initialize by parsing the pattern."""
         self.pattern = pattern
         self.pattern_segments = parse_pattern(pattern)
 
     def match(self, path: Union[str, pathlib.Path]) -> Optional[Match]:
         """
-        :return: the match if `path` could be matched, None otherwise
+        Try to match the given path.
+
+        :return: a complete match, or None if no complete match
         """
         # pylint: disable=too-many-branches
 
@@ -548,8 +605,8 @@ class Matcher:
             raise ValueError("Can not match relative path against absolute path pattern {}: {}".format(
                 self.pattern, path))
 
-        segments = pth.split(os.sep)  # type: List[str]
-        segments = [segment for segment in segments if segment != '' and segment != '.']
+        segments = pth.split('/')  # type: List[str]
+        segments = [segment for segment in segments if segment not in ('', '.')]
 
         for segment in segments:
             if segment == '..':
@@ -560,16 +617,19 @@ class Matcher:
 
         mtch = Match()
         for segment, patseg in zip(segments, self.pattern_segments):
-            mtch = match_segment(segment=segment, pattern_segment=patseg, match=mtch)
-            if mtch is None:
+            maybe_mtch = match_segment(segment=segment, pattern_segment=patseg, match=mtch)
+
+            if maybe_mtch is None:
                 return None
+
+            mtch = maybe_mtch
 
         return mtch
 
 
 def walk(pattern: str) -> Iterable[Tuple[Match, pathlib.Path]]:
     """
-    walks the pattern on the file system and returns all the matching files with their parsed timestamps.
+    Walk the pattern on the file system and return all the matching files with their parsed timestamps.
 
     :param pattern: that each file should match.
     :return: matched files and extracted timestamps

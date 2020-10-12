@@ -33,6 +33,10 @@ setup(
     python_requires='>=3.5',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     install_requires=['lexery>=1.0.0'],
-    extras_require={'dev': ['mypy==0.560', 'pylint==1.8.2', 'yapf==0.20.2']},
+    # yapf: disable
+    extras_require={
+        'dev': ['coverage>=5,<6', 'mypy==0.790', 'pylint==2.6.0', 'yapf==0.20.2', 'pydocstyle>=5.0.0,<6', 'twine']
+    },
+    # yapf: enable
     py_modules=['datetime_glob'],
     package_data={"datetime_glob": ["py.typed"]})
