@@ -5,6 +5,10 @@ datetime-glob
     :target: https://github.com/Parquery/datetime-glob/actions?query=workflow%3ACheck-push
     :alt: Check status
 
+.. image:: https://coveralls.io/repos/github/Parquery/datetime-glob/badge.svg?branch=master
+    :target: https://coveralls.io/github/Parquery/datetime-glob
+    :alt: Test coverage
+
 .. image:: https://badge.fury.io/py/datetime-glob.svg
     :target: https://pypi.org/project/datetime-glob/
     :alt: PyPI - version
