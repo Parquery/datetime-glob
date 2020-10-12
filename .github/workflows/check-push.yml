@@ -24,6 +24,12 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           pip3 install -e .[dev]
+          pip3 install coveralls
 
       - name: Run checks
         run: ./precommit.py
+
+      - name: Upload coverage to coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: coveralls
