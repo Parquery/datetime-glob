@@ -1,6 +1,19 @@
 datetime-glob
 =============
 
+.. image:: https://github.com/Parquery/datetime-glob/workflows/Check-push/badge.svg
+    :target: https://github.com/Parquery/datetime-glob/actions?query=workflow%3ACheck-push
+    :alt: Check status
+
+.. image:: https://badge.fury.io/py/datetime-glob.svg
+    :target: https://pypi.org/project/datetime-glob/
+    :alt: PyPI - version
+
+.. image:: https://img.shields.io/pypi/pyversions/datetime-glob.svg
+    :target: https://pypi.org/project/datetime-glob/
+    :alt: PyPI - Python Version
+
+
 Parses date/times from a path given a glob pattern intertwined with date/time format akin to strptime/strftime format.
 
 datetime.datetime.strptime suffices for simple date/time parsing. However, as soon as you need to handle wildcards,
