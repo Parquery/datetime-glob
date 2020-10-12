@@ -1,3 +1,12 @@
+1.0.8
+=====
+* Made code comply to latest mypy 0.790 and pylint 2.6.0
+* Made docstrings comply with pydocstyle
+* Explicitly target Posix (and develop on a Windows machine so that bugs related
+  to *e.g.*, path separators become obvious)
+* Introduce continuous integration based on GitHub workflows
+* Update package information (author email and URL)
+
 1.0.7
 =====
 * Moved to github.com
